@@ -69,7 +69,7 @@ class InvestigationStats(QWidget):
         layout.setSpacing(20)
 
         stats = [
-            ("EVIDENCE", len(assessment.evidence), theme.PRIMARY),
+            ("EVIDENCES", len(assessment.evidence), theme.PRIMARY),
             ("CLUES FOUND", len(assessment.clues), theme.WARNING),
             ("LIMITATIONS", len(assessment.unknowns), theme.DANGER),
             ("RESURRECTION PLAN", len(assessment.resurrection_plan), theme.INFO),
@@ -86,7 +86,6 @@ class InvestigationStats(QWidget):
             QFrame {{
                 background-color: {theme.BG_CARD};
                 border: none;
-                border-radius: 12px;
             }}
         """)
         apply_elevation(card)
@@ -102,11 +101,11 @@ class InvestigationStats(QWidget):
         layout.setSpacing(5)
         
         lbl = QLabel(label)
-        lbl.setStyleSheet(f"color: {theme.TEXT_MUTED}; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;")
+        lbl.setStyleSheet(f"border: none; color: {theme.TEXT_MUTED}; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;")
         lbl.setAlignment(Qt.AlignmentFlag.AlignLeft)
         
         val = QLabel(str(value))
-        val.setStyleSheet(f"color: {color}; font-size: 28px; font-weight: 600;")
+        val.setStyleSheet(f"border: none; color: {color}; font-size: 28px; font-weight: 600;")
         val.setAlignment(Qt.AlignmentFlag.AlignLeft)
         
         layout.addWidget(lbl)
@@ -119,7 +118,6 @@ class InvestigationStats(QWidget):
             QFrame {{
                 background-color: {theme.BG_CARD};
                 border-top: 3px solid {color};
-                border-radius: 12px;
             }}
         """)
         
