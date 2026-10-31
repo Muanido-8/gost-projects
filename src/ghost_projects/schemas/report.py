@@ -3,7 +3,7 @@ from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from ghost_projects.types.assessment import ProjectAssessment
+from ghost_projects.schemas.assessment import ProjectAssessment
 
 
 class ReportFormat(str, Enum):

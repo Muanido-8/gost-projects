@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from ghost_projects.types.evidence import Evidence
+from ghost_projects.schemas.evidence import Evidence
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ class EvidenceCollector:
 
     def create_evidence(
         self, 
-        source_path: Path, 
+        source_path: str, 
         description: str, 
         excerpt: Optional[str] = None, 
         line_start: Optional[int] = None, 
@@ -28,7 +28,7 @@ class EvidenceCollector:
         Creates a stable evidence identifier and stores the evidence.
         
         Args:
-            source_path: Path to the file providing the evidence.
+            source_path: Path to the file providing the evidence (as a string).
             description: Description of what this evidence proves.
             excerpt: The actual text snippet from the file.
             line_start: Starting line number.

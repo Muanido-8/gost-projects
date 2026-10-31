@@ -3,8 +3,8 @@ from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from ghost_projects.types.assessment import ProjectAssessment
-from ghost_projects.types.project import ProjectInfo
+from ghost_projects.schemas.assessment import ProjectAssessment
+from ghost_projects.schemas.project import ProjectInfo
 
 
 class AnalysisStatus(str, Enum):

@@ -1,21 +1,24 @@
+
 import logging
 from pathlib import Path
 from typing import Sequence, Union
 
 from ghost_projects.config.settings import settings
-from ghost_projects.types.file import FileContent, FileReadError
+from ghost_projects.schemas.file import FileContent, FileReadError
+from ghost_projects.services.file_filter import FileFilter
 
 logger = logging.getLogger(__name__)
+
 
 class FileReader:
     """
     Responsible for reading relevant textual files discovered by the scanner.
     """
 
-    def __init__(self):
-        # We use settings for limits
+    def __init__(self, file_filter: FileFilter | None = None):
         self.max_size = settings.max_file_size_bytes
         self.max_chars = settings.max_file_content_chars
+        self.file_filter = file_filter
 
     def is_binary(self, path: Path) -> bool:
         """
@@ -34,20 +37,55 @@ class FileReader:
         Reads a single file and returns its content or an error.
         """
         try:
-            if not path.exists():
-                return FileReadError(path=path, reason="File not found")
+            # Require a configured filter before accessing files.
+            if self.file_filter is None:
+                return FileReadError(
+                    path=path,
+                    reason="File filter is not configured"
+                )
 
-            # Respect maximum file size before reading
+            # Apply ignore rules before accessing the file.
+            if not self.file_filter.is_allowed(path):
+                return FileReadError(
+                    path=path,
+                    reason="File is excluded by project ignore rules"
+                )
+
+            if path.is_symlink():
+                return FileReadError(
+                    path=path,
+                    reason="Symbolic links are not allowed"
+                )
+
+            if not path.exists():
+                return FileReadError(
+                    path=path,
+                    reason="File not found"
+                )
+
+            if not path.is_file():
+                return FileReadError(
+                    path=path,
+                    reason="Path is not a file"
+                )
+
+            # Respect maximum file size before reading.
             size = path.stat().st_size
+
             if size > self.max_size:
-                return FileReadError(path=path, reason=f"File size {size} exceeds limit {self.max_size}")
+                return FileReadError(
+                    path=path,
+                    reason=f"File size {size} exceeds limit {self.max_size}"
+                )
 
             if self.is_binary(path):
-                return FileReadError(path=path, reason="Binary file detected")
+                return FileReadError(
+                    path=path,
+                    reason="Binary file detected"
+                )
 
-            # Read content with encoding handling
-            # We try utf-8 first, then fallback to latin-1 if it fails
-            content = ""
+            # Read content with encoding handling.
+            # Try UTF-8 first, then fallback to Latin-1.
             try:
                 with open(path, "r", encoding="utf-8") as f:
                     content = f.read()
@@ -56,6 +94,7 @@ class FileReader:
                     content = f.read()
 
             truncated = False
+
             if len(content) > self.max_chars:
                 content = content[:self.max_chars]
                 truncated = True
@@ -67,16 +106,29 @@ class FileReader:
             )
 
         except PermissionError:
-            return FileReadError(path=path, reason="Permission denied")
+            return FileReadError(
+                path=path,
+                reason="Permission denied"
+            )
+
         except Exception as e:
             logger.error(f"Unexpected error reading {path}: {e}")
-            return FileReadError(path=path, reason=str(e))
 
-    def read_batch(self, paths: Sequence[Path]) -> Sequence[Union[FileContent, FileReadError]]:
+            return FileReadError(
+                path=path,
+                reason=str(e)
+            )
+
+    def read_batch(
+        self,
+        paths: Sequence[Path]
+    ) -> Sequence[Union[FileContent, FileReadError]]:
         """
         Reads multiple files in batch.
         """
         results = []
+
         for path in paths:
             results.append(self.read_file(path))
+
         return results

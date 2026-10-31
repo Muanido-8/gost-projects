@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
@@ -7,7 +5,7 @@ class Evidence(BaseModel):
     model_config = ConfigDict(extra="forbid", validate_assignment=True)
 
     id: str = Field(min_length=1)
-    source_path: Path
+    source_path: str
     description: str = Field(min_length=1)
     excerpt: str | None = None
     line_start: int | None = Field(default=None, ge=1)

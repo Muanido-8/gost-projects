@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from ghost_projects.types.git import GitCommit, GitHistory
+from ghost_projects.schemas.git import GitCommit, GitHistory
 
 logger = logging.getLogger(__name__)
 

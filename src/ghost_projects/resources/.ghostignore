@@ -1,0 +1,29 @@
+# Sensitive files
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# JavaScript
+node_modules/
+
+# Dependencies and generated files
+vendor/
+dist/
+build/
+
+# Ghost Projects configuration
+.ghostignore
+
+.git
+.idea
+.vscode
+target

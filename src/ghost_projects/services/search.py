@@ -3,6 +3,7 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Generator, Optional
+from ghost_projects.services.file_filter import FileFilter
 
 from ghost_projects.config.settings import settings
 
@@ -48,56 +49,77 @@ class FileSearchService:
     Provides 'Find in Files' functionality across the project.
     """
 
-    def search(self, root: Path, options: SearchOptions) -> Generator[SearchMatch, None, None]:
+    def search(
+        self,
+        root: Path,
+        options: SearchOptions
+    ) -> Generator[SearchMatch, None, None]:
         """
-        Searches for the query across files in the project root.
-        
-        Args:
-            root: The project root directory.
-            options: Search configuration options.
-            
-        Yields:
-            SearchMatch objects for each occurrence found.
-            
-        Raises:
-            InvalidRegexError: If the regex pattern is invalid.
+        Searches for the query across allowed files in the project root.
         """
+
+        root = root.resolve()
+        file_filter = FileFilter(project_root=root)
+
         pattern = self._compile_pattern(options)
         results_count = 0
 
-        # Discover files to search
-        for path in root.rglob("*"):
-            if results_count >= options.max_results:
-                break
+        def on_walk_error(error: OSError):
+            logger.warning(f"Error accessing directory: {error}")
 
-            if not path.is_file():
-                continue
+        for current_root, dirs, files in os.walk(
+            root,
+            topdown=True,
+            followlinks=False,
+            onerror=on_walk_error,
+        ):
+            current_path = Path(current_root)
 
-            if not self._should_search_file(path, options):
-                continue
+            # Prune ignored directories before traversing them.
+            dirs[:] = sorted(
+                directory
+                for directory in dirs
+                if not (current_path / directory).is_symlink()
+                and file_filter.is_allowed(current_path / directory)
+            )
 
-            # Avoid following directory symlinks (already handled by is_file, 
-            # but we check for safety)
-            if path.is_symlink():
-                continue
+            for filename in sorted(files):
+                if results_count >= options.max_results:
+                    return
 
-            # Respect file size limit from settings
-            try:
-                if path.stat().st_size > settings.max_file_size_bytes:
+                path = current_path / filename
+
+                # Ignore excluded files and symbolic links.
+                if path.is_symlink() or not file_filter.is_allowed(path):
                     continue
-            except OSError:
-                continue
 
-            # Search the file line by line
-            try:
-                for match in self._search_in_file(path, pattern, options):
-                    yield match
-                    results_count += 1
-                    if results_count >= options.max_results:
-                        break
-            except (UnicodeDecodeError, PermissionError) as e:
-                logger.debug(f"Skipping file {path} due to read error: {e}")
-                continue
+                if not path.is_file():
+                    continue
+
+                if not self._should_search_file(path, options):
+                    continue
+
+                # Respect file size limit.
+                try:
+                    if path.stat().st_size > settings.max_file_size_bytes:
+                        continue
+                except OSError:
+                    continue
+
+                # Search file line by line.
+                try:
+                    for match in self._search_in_file(path, pattern, options):
+                        yield match
+                        results_count += 1
+
+                        if results_count >= options.max_results:
+                            return
+
+                except (UnicodeDecodeError, PermissionError, OSError) as e:
+                    logger.debug(
+                        f"Skipping file {path} due to read error: {e}"
+                    )
+                    continue
 
     def _compile_pattern(self, options: SearchOptions) -> re.Pattern:
         """Compiles the search query into a regex pattern."""

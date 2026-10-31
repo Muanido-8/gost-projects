@@ -3,13 +3,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from ghost_projects.types.analysis import AnalysisResult, AnalysisStatus
-from ghost_projects.types.project import ProjectInfo
+from ghost_projects.schemas.analysis import AnalysisResult, AnalysisStatus
+from ghost_projects.schemas.project import ProjectInfo
 from ghost_projects.services.scanner import ProjectScanner
 from ghost_projects.services.reader import FileReader
 from ghost_projects.services.detector import ProjectDetector
 from ghost_projects.services.git_inspector import GitInspector
 from ghost_projects.services.evidence import EvidenceCollector
+from ghost_projects.services.file_filter import FileFilter
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +43,10 @@ class AnalysisService:
         Returns:
             An AnalysisResult containing the gathered project information.
         """
+        # Define filter
+        filter = FileFilter(root)
+        self.reader = FileReader(file_filter=filter)
+
         result = AnalysisResult(
             project=ProjectInfo(name=root.name, root_path=root, detected_languages=[], detected_technologies=[], has_git=False),
             status=AnalysisStatus.SCANNING
@@ -103,7 +108,7 @@ class AnalysisService:
                         # We assume it's FileContent if it has content
                         excerpt = getattr(content_res, 'content', "")[:500]
                         self.evidence_collector.create_evidence(
-                            source_path=path,
+                            source_path=str(path),
                             description="Project README content",
                             excerpt=excerpt
                         )
