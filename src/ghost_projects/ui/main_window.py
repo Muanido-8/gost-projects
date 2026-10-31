@@ -3,7 +3,7 @@ from PySide6.QtWidgets import (
     QMainWindow, QStackedWidget, QWidget, QVBoxLayout, 
     QLabel, QFrame, QGraphicsOpacityEffect
 )
-from PySide6.QtCore import Qt, QThread, Slot
+from PySide6.QtCore import Qt, QThread, Slot, QTimer
 
 from ghost_projects.ui.views.welcome_view import WelcomeView
 from ghost_projects.ui.views.results_view import ResultsView
@@ -21,11 +21,17 @@ class MainWindow(QMainWindow):
         # Apply Global Styles
         self.setStyleSheet(STYLESHEET)
         
-        self.init_ui()
-        
         # Threading references
         self.worker_thread = None
         self.worker = None
+
+        # Animation state
+        self.animation_timer = QTimer()
+        self.animation_timer.timeout.connect(self.update_animation_text)
+        self.animation_step = 0
+        self.current_base_status = ""
+
+        self.init_ui()
 
     def init_ui(self):
         # Central Widget and Stack
@@ -102,10 +108,26 @@ class MainWindow(QMainWindow):
         self.loading_overlay.raise_()
 
     def update_status(self, message: str):
+        self.current_base_status = message
+        
+        if "Executing deep investigation" in message:
+            self.animation_timer.start(500)
+        else:
+            self.animation_timer.stop()
+            
         self.status_label.setText(message)
+
+    def update_animation_text(self):
+        dots = ["", ".", "..", "..."]
+        self.animation_step = (self.animation_step + 1) % len(dots)
+        
+        # Remove existing trailing dots if any and add animated ones
+        base = self.current_base_status.rstrip(".")
+        self.status_label.setText(f"{base}{dots[self.animation_step]}")
 
     @Slot(str)
     def on_investigation_finished(self, result_text: str):
+        self.animation_timer.stop()
         self.loading_overlay.hide()
         self.welcome_view.exorcise_button.setEnabled(True)
         self.welcome_view.select_button.setEnabled(True)
@@ -115,6 +137,7 @@ class MainWindow(QMainWindow):
 
     @Slot(str)
     def on_investigation_error(self, error_message: str):
+        self.animation_timer.stop()
         self.loading_overlay.hide()
         self.welcome_view.exorcise_button.setEnabled(True)
         self.welcome_view.select_button.setEnabled(True)
