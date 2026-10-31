@@ -104,4 +104,4 @@ Distributed under the MIT License. See `LICENSE` for more information.
 - **Cloud Infrastructure Dependency:** Reliance on external AI services introduced connectivity, latency, and availability constraints.
 - **Investigation Performance:** Balancing investigation depth, execution time, and resource consumption.
 
-## Have fun, peace and love 😇✌️☺️​
+## ❤️ Have fun, peace and love 😇✌️☺️​
