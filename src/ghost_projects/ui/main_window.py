@@ -1,4 +1,6 @@
 import logging
+from ghost_projects.schemas.assessment import ProjectAssessment
+from ghost_projects.schemas.project import ProjectInfo
 from PySide6.QtWidgets import (
     QMainWindow, QStackedWidget, QWidget, QVBoxLayout, 
     QLabel, QFrame, QGraphicsOpacityEffect
@@ -126,13 +128,13 @@ class MainWindow(QMainWindow):
         self.status_label.setText(f"{base}{dots[self.animation_step]}")
 
     @Slot(str)
-    def on_investigation_finished(self, result_text: str):
+    def on_investigation_finished(self, project_info: ProjectInfo, assessment: ProjectAssessment):
         self.animation_timer.stop()
         self.loading_overlay.hide()
         self.welcome_view.exorcise_button.setEnabled(True)
         self.welcome_view.select_button.setEnabled(True)
         
-        self.results_view.set_results(result_text)
+        self.results_view.set_results(project_info, assessment)
         self.stack.setCurrentWidget(self.results_view)
 
     @Slot(str)
